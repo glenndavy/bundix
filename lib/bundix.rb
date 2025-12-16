@@ -63,6 +63,7 @@ class Bundix
     "mri" => [{engine: "ruby"}, {engine: "maglev"}],
     "rbx" => [{engine: "rbx"}],
     "jruby" => [{engine: "jruby"}],
+    "windows" => [{engine: "mswin"}, {engine: "mswin64"}, {engine: "mingw"}],
     "mswin" => [{engine: "mswin"}],
     "mswin64" => [{engine: "mswin64"}],
     "mingw" => [{engine: "mingw"}],
@@ -70,7 +71,7 @@ class Bundix
     "x64_mingw" => [{engine: "mingw"}],
   }.each do |name, list|
     PLATFORM_MAPPING[name] = list
-    %w(1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6).each do |version|
+    %w(1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 3.0 3.1 3.2 3.3 3.4).each do |version|
       PLATFORM_MAPPING["#{name}_#{version.sub(/[.]/,'')}"] = list.map do |platform|
         platform.merge(:version => version)
       end
@@ -81,7 +82,7 @@ class Bundix
     # c.f. Bundler::CurrentRuby
     platforms = dep_cache.fetch(spec.name).platforms.map do |platform_name|
       PLATFORM_MAPPING[platform_name.to_s]
-    end.flatten
+    end.flatten.compact
 
     {platforms: platforms}
   end

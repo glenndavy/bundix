@@ -96,6 +96,8 @@ class Bundix
         end
       when true, false
         obj.to_s
+      when NilClass
+        'null'
       else
         fail "Cannot convert to nix: #{obj.inspect}"
       end

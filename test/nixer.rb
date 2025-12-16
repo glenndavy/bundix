@@ -20,4 +20,12 @@ class TestNixer < Minitest::Test
       Bundix::Nixer.new([{:a => "x", :b => "7"}, {:a => "y", :c => "8"}]).serialize
     )
   end
+
+  def test_object2nix_nil
+    assert_equal('null', Bundix::Nixer.new(nil).serialize)
+  end
+
+  def test_object2nix_hash_with_nil_value
+    assert_equal("{\n  a = null;\n}", Bundix::Nixer.new({:a => nil}).serialize)
+  end
 end
