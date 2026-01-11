@@ -69,6 +69,23 @@ class Bundix
       STDERR.puts(msg)
     end
 
+    # Use nix-prefetch-url directly on URL, bypassing Ruby Net::HTTP entirely
+    # This avoids IPv6 issues and network fragility
+    def nix_prefetch_url_direct(url)
+      warn "Prefetching #{url} directly with nix-prefetch-url" if $VERBOSE
+      result = sh(
+        Bundix::NIX_PREFETCH_URL,
+        '--type', 'sha256',
+        '--name', File.basename(url),
+        url  # Direct URL, not file://
+      ).force_encoding('UTF-8').strip
+      result
+    rescue => ex
+      STDERR.puts("nix-prefetch-url failed for #{url}: #{ex.message}")
+      STDERR.puts(ex.full_message) if $VERBOSE
+      nil
+    end
+
     def nix_prefetch_url(url)
       dir = File.join(ENV['XDG_CACHE_HOME'] || "#{ENV['HOME']}/.cache", 'bundix')
       FileUtils.mkdir_p dir
@@ -118,6 +135,44 @@ class Bundix
       nil
     end
 
+    # Detect current platform and try platform-specific gem first
+    def detect_platform
+      case RUBY_PLATFORM
+      when /x86_64-linux/ then 'x86_64-linux'
+      when /aarch64-linux/ then 'aarch64-linux'
+      when /arm64-darwin|aarch64-darwin/ then 'arm64-darwin'
+      when /x86_64-darwin/ then 'x86_64-darwin'
+      else 'ruby' # fallback to ruby platform
+      end
+    end
+
+    # Try platform-specific gem, fall back to ruby platform
+    def fetch_remote_hash_smart(spec, remote)
+      use_direct = ENV['BUNDIX_USE_DIRECT_PREFETCH'] == '1'
+      platform = ENV['BUNDIX_TARGET_PLATFORM'] || detect_platform
+
+      # Try platform-specific gem first (precompiled)
+      if platform != 'ruby'
+        platform_uri = "#{remote}/gems/#{spec.name}-#{spec.version}-#{platform}.gem"
+        warn "Trying platform-specific: #{platform_uri}" if $VERBOSE
+
+        hash = use_direct ? nix_prefetch_url_direct(platform_uri) : nix_prefetch_url(platform_uri)
+        if hash && hash[SHA256_32]
+          puts "Using #{platform} platform gem for #{spec.name}" if $VERBOSE
+          return hash[SHA256_32]
+        end
+      end
+
+      # Fall back to ruby platform (needs compilation)
+      warn "Falling back to ruby platform for #{spec.name}" if $VERBOSE
+      uri = "#{remote}/gems/#{spec.full_name}.gem"
+      result = use_direct ? nix_prefetch_url_direct(uri) : nix_prefetch_url(uri)
+      result&.[](SHA256_32)
+    rescue => e
+      puts "Error fetching #{spec.name}: #{e.message}" if $VERBOSE
+      nil
+    end
+
     def fetch_remotes_hash(spec, remotes)
       remotes.each do |remote|
         hash = fetch_remote_hash(spec, remote)
@@ -128,13 +183,11 @@ class Bundix
     end
 
     def fetch_remote_hash(spec, remote)
-      uri = "#{remote}/gems/#{spec.full_name}.gem"
-      result = nix_prefetch_url(uri)
-      return unless result
-      result[SHA256_32]
+      # Use smart platform-aware fetching
+      fetch_remote_hash_smart(spec, remote)
     rescue => e
       puts "ignoring error during fetching: #{e}"
-      puts e.backtrace
+      puts e.backtrace if $VERBOSE
       nil
     end
   end

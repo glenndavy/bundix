@@ -43,6 +43,21 @@ class Bundix
           options[:magic] = true
         end
 
+        o.on '--use-direct-prefetch', 'Use nix-prefetch-url directly (avoids IPv6 issues)' do
+          ENV['BUNDIX_USE_DIRECT_PREFETCH'] = '1'
+          options[:use_direct_prefetch] = true
+        end
+
+        o.on '--platform=PLATFORM', 'Target platform (x86_64-linux, arm64-darwin, etc.)' do |value|
+          ENV['BUNDIX_TARGET_PLATFORM'] = value
+          options[:platform] = value
+        end
+
+        o.on '--prefer-platform-gems', 'Prefer platform-specific gems over ruby platform' do
+          options[:prefer_platform_gems] = true
+          ENV['BUNDIX_PREFER_PLATFORM'] = '1'
+        end
+
         o.on "--ruby=#{options[:ruby]}", 'ruby version to use for magic and init, defaults to latest' do |value|
           options[:ruby] = value
         end

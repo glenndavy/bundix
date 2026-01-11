@@ -70,6 +70,48 @@ regret it.
    }
    ```
 
+## Improved Platform Handling
+
+### Avoiding IPv6 Network Issues
+
+If you experience network timeouts when bundix tries to fetch gems from rubygems.org, you can use direct nix-prefetch-url (bypasses Ruby Net::HTTP):
+
+```bash
+bundix --magic --use-direct-prefetch
+```
+
+This avoids IPv6 connectivity issues in Ruby's Net::HTTP and is more reliable for systems with broken IPv6 configurations.
+
+### Multi-Platform Projects
+
+For Rails 8.1+ with multiple platforms in Gemfile.lock:
+
+```bash
+# Option 1: Use direct prefetch (recommended)
+bundix --magic --use-direct-prefetch --prefer-platform-gems
+
+# Option 2: Clean Gemfile.lock to single platform
+rm Gemfile.lock
+bundle lock --add-platform x86_64-linux
+bundix --magic
+```
+
+### Environment Variables
+
+- `BUNDIX_USE_DIRECT_PREFETCH=1` - Use nix-prefetch-url directly
+- `BUNDIX_TARGET_PLATFORM=x86_64-linux` - Target specific platform
+- `BUNDIX_PREFER_PLATFORM=1` - Prefer precompiled platform gems
+
+### Platform-Specific Gems
+
+Bundix now automatically handles platform-specific gem variants (e.g., `nokogiri-1.18.10-x86_64-linux.gem` vs `nokogiri-1.18.10.gem`). When using `--prefer-platform-gems`, it will try to fetch the precompiled version for your platform first, falling back to the ruby platform if not available.
+
+Benefits:
+- Fixes IPv6 timeout issues
+- Reduces hash mismatches for multi-platform projects
+- Prefers precompiled gems (faster builds)
+- Works with Rails 8.1+ multi-platform Gemfiles
+
 ## How & Why
 
 I'd usually just tell you to read the code yourself, but the big picture is
