@@ -21,8 +21,8 @@ class TestConvert < Minitest::Test
       return "fetch_remotes_hash_hash"
     end
 
-    def fetch_vendor_gem(spec)
-      nil # Stub returns nil (gem not found in vendor)
+    def fetch_vendor_hash(spec)
+      nil # Stub returns nil (no vendor hash)
     end
   end
 
