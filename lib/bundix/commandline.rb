@@ -58,6 +58,10 @@ class Bundix
           ENV['BUNDIX_PREFER_PLATFORM'] = '1'
         end
 
+        o.on '--prefer-vendor-path=PATH', 'Use gems from vendor path if present (e.g., vendor/cache)' do |value|
+          options[:prefer_vendor_path] = value
+        end
+
         o.on "--ruby=#{options[:ruby]}", 'ruby version to use for magic and init, defaults to latest' do |value|
           options[:ruby] = value
         end

@@ -34,6 +34,7 @@ class Bundix
   def initialize(options)
     @options = { quiet: false, tempfile: nil }.merge(options)
     @fetcher = Fetcher.new
+    @fetcher.vendor_path = options[:prefer_vendor_path]
   end
 
   def convert

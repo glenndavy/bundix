@@ -3,6 +3,8 @@ require 'bundix'
 
 class TestConvert < Minitest::Test
   class PrefetchStub
+    attr_accessor :vendor_path
+
     def nix_prefetch_url(*args)
       return "nix_prefetch_url_hash"
     end
@@ -17,6 +19,10 @@ class TestConvert < Minitest::Test
 
     def fetch_remotes_hash(spec, remotes)
       return "fetch_remotes_hash_hash"
+    end
+
+    def fetch_vendor_gem(spec)
+      nil # Stub returns nil (gem not found in vendor)
     end
   end
 

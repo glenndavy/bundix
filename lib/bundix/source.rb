@@ -1,5 +1,7 @@
 class Bundix
   class Fetcher
+    attr_accessor :vendor_path
+
     def sh(*args, &block)
       Bundix.sh(*args, &block)
     end
@@ -135,6 +137,25 @@ class Bundix
       nil
     end
 
+    # Check if gem exists in vendor path and return path + hash if found
+    def fetch_vendor_gem(spec)
+      return nil unless vendor_path
+
+      gem_file = "#{spec.full_name}.gem"
+      vendor_gem_path = File.join(vendor_path, gem_file)
+
+      return nil unless File.file?(vendor_gem_path)
+
+      warn "Found #{gem_file} in vendor path" if $VERBOSE
+      hash = nix_prefetch_url(vendor_gem_path)&.[](SHA256_32)
+      return nil unless hash
+
+      {
+        path: Pathname.new(File.join(vendor_path, gem_file)),
+        sha256: format_hash(hash)
+      }
+    end
+
     # Detect current platform and try platform-specific gem first
     def detect_platform
       case RUBY_PLATFORM
@@ -215,6 +236,16 @@ class Bundix
     end
 
     def convert_rubygems
+      # Check vendor path first if configured
+      if vendor_gem = fetcher.fetch_vendor_gem(spec)
+        puts "#{vendor_gem[:sha256]} => #{spec.full_name}.gem (vendor)" if $VERBOSE
+        return {
+          type: 'path',
+          path: vendor_gem[:path],
+          sha256: vendor_gem[:sha256]
+        }
+      end
+
       remotes = spec.source.remotes.map{|remote| remote.to_s.sub(/\/+$/, '') }
       hash = fetcher.fetch_local_hash(spec)
       remote, hash = fetcher.fetch_remotes_hash(spec, remotes) unless hash
