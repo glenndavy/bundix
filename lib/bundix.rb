@@ -108,9 +108,25 @@ class Bundix
 
       case spec_source = spec.source
       when Bundler::Source::Git
+        # Don't cache git sources if vendor/cache exists - force regeneration
+        # This allows conversion from type="git" to type="path" for cached gems
+        spec_rev = spec_source.options['revision']
+        short_rev = spec_rev[0..11] if spec_rev
+
+        if short_rev
+          # Check both underscore and hyphen versions
+          vendor_dir = File.join(Dir.pwd, 'vendor', 'cache', "#{spec.name}-#{short_rev}")
+          vendor_dir_hyphen = File.join(Dir.pwd, 'vendor', 'cache', "#{spec.name.tr('_', '-')}-#{short_rev}")
+
+          if File.directory?(vendor_dir) || File.directory?(vendor_dir_hyphen)
+            warn "Forcing regeneration of #{spec.name} from vendor/cache"
+            next  # Skip cache, force regeneration
+          end
+        end
+
         next unless cached_source['type'] == 'git'
         next unless cached_rev = cached_source['rev']
-        next unless spec_rev = spec_source.options['revision']
+        next unless spec_rev
         spec_rev == cached_rev
       when Bundler::Source::Rubygems
         next unless cached_source['type'] == 'gem'
