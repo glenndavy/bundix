@@ -257,25 +257,37 @@ class Bundix
       # Note: gem names may use underscores but git repos use hyphens, so try both
       short_rev = revision[0..11]  # First 12 chars of git revision
 
+      # Debug output
+      warn "DEBUG: Checking for git gem: #{spec.name}" if $VERBOSE
+      warn "DEBUG:   Revision: #{revision}" if $VERBOSE
+      warn "DEBUG:   Short rev: #{short_rev}" if $VERBOSE
+      warn "DEBUG:   Working dir: #{Dir.pwd}" if $VERBOSE
+
       # Try with original gem name (e.g., opscare_reports)
       vendor_dir = File.join(Dir.pwd, 'vendor', 'cache', "#{spec.name}-#{short_rev}")
       # Try with hyphens instead of underscores (e.g., opscare-reports)
       vendor_dir_hyphen = File.join(Dir.pwd, 'vendor', 'cache', "#{spec.name.tr('_', '-')}-#{short_rev}")
 
+      warn "DEBUG:   Checking: #{vendor_dir}" if $VERBOSE
+      warn "DEBUG:   Exists? #{File.directory?(vendor_dir)}" if $VERBOSE
+      warn "DEBUG:   Checking: #{vendor_dir_hyphen}" if $VERBOSE
+      warn "DEBUG:   Exists? #{File.directory?(vendor_dir_hyphen)}" if $VERBOSE
+
       if File.directory?(vendor_dir)
-        warn "Using local path for #{spec.name} from #{vendor_dir}" if $VERBOSE
+        warn "Using local path for #{spec.name} from #{vendor_dir}"
         return {
           type: "path",
           path: "./vendor/cache/#{spec.name}-#{short_rev}"
         }
       elsif File.directory?(vendor_dir_hyphen)
-        warn "Using local path for #{spec.name} from #{vendor_dir_hyphen}" if $VERBOSE
+        warn "Using local path for #{spec.name} from #{vendor_dir_hyphen}"
         return {
           type: "path",
           path: "./vendor/cache/#{spec.name.tr('_', '-')}-#{short_rev}"
         }
       end
 
+      warn "DEBUG: No vendor/cache directory found, falling back to git fetch" if $VERBOSE
       # Fall back to git fetching if not in vendor/cache
       output = fetcher.nix_prefetch_git(uri, revision, submodules: submodules)
       # FIXME: this is a hack, we should separate $stdout/$stderr in the sh call
