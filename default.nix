@@ -4,6 +4,8 @@
   bundler ? (pkgs.bundler.override { inherit ruby; }),
   nix ? pkgs.nix,
   nix-prefetch-git ? pkgs.nix-prefetch-git,
+  git ? pkgs.git,
+  openssh ? pkgs.openssh,
 }:
 pkgs.stdenv.mkDerivation rec {
   version = "2.5.0";
@@ -15,12 +17,14 @@ pkgs.stdenv.mkDerivation rec {
     makeWrapper $src/bin/bundix $out/bin/bundix \
       --suffix PATH : "${nix.out}/bin" \
       --prefix PATH : "${nix-prefetch-git.out}/bin" \
+      --prefix PATH : "${git.out}/bin" \
+      --prefix PATH : "${openssh.out}/bin" \
       --prefix PATH : "${bundler.out}/bin" \
       --set GEM_PATH "${bundler}/${bundler.ruby.gemPath}"
   '';
 
   nativeBuildInputs = [ pkgs.makeWrapper ];
-  buildInputs = [ ruby bundler ];
+  buildInputs = [ ruby bundler git openssh ];
 
   meta = {
     inherit version;
