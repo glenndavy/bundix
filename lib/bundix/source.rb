@@ -251,6 +251,21 @@ class Bundix
       revision = spec.source.options.fetch('revision')
       uri = spec.source.options.fetch('uri')
       submodules = !!spec.source.submodules
+
+      # Check if gem is available in vendor/cache as a directory (from bundle package --all)
+      # Format: vendor/cache/gemname-shortrev (e.g., opscare-reports-87e403c81899)
+      short_rev = revision[0..11]  # First 12 chars of git revision
+      vendor_dir = File.join(Dir.pwd, 'vendor', 'cache', "#{spec.name}-#{short_rev}")
+
+      if File.directory?(vendor_dir)
+        warn "Using local path for #{spec.name} from #{vendor_dir}" if $VERBOSE
+        return {
+          type: "path",
+          path: "./vendor/cache/#{spec.name}-#{short_rev}"
+        }
+      end
+
+      # Fall back to git fetching if not in vendor/cache
       output = fetcher.nix_prefetch_git(uri, revision, submodules: submodules)
       # FIXME: this is a hack, we should separate $stdout/$stderr in the sh call
       hash = JSON.parse(output[/({[^}]+})\s*\z/m])['sha256']
