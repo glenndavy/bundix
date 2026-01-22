@@ -254,14 +254,25 @@ class Bundix
 
       # Check if gem is available in vendor/cache as a directory (from bundle package --all)
       # Format: vendor/cache/gemname-shortrev (e.g., opscare-reports-87e403c81899)
+      # Note: gem names may use underscores but git repos use hyphens, so try both
       short_rev = revision[0..11]  # First 12 chars of git revision
+
+      # Try with original gem name (e.g., opscare_reports)
       vendor_dir = File.join(Dir.pwd, 'vendor', 'cache', "#{spec.name}-#{short_rev}")
+      # Try with hyphens instead of underscores (e.g., opscare-reports)
+      vendor_dir_hyphen = File.join(Dir.pwd, 'vendor', 'cache', "#{spec.name.tr('_', '-')}-#{short_rev}")
 
       if File.directory?(vendor_dir)
         warn "Using local path for #{spec.name} from #{vendor_dir}" if $VERBOSE
         return {
           type: "path",
           path: "./vendor/cache/#{spec.name}-#{short_rev}"
+        }
+      elsif File.directory?(vendor_dir_hyphen)
+        warn "Using local path for #{spec.name} from #{vendor_dir_hyphen}" if $VERBOSE
+        return {
+          type: "path",
+          path: "./vendor/cache/#{spec.name.tr('_', '-')}-#{short_rev}"
         }
       end
 
