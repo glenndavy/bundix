@@ -257,21 +257,10 @@ class Bundix
       # Note: gem names may use underscores but git repos use hyphens, so try both
       short_rev = revision[0..11]  # First 12 chars of git revision
 
-      # Debug output (unconditional for debugging)
-      warn "DEBUG: Checking for git gem: #{spec.name}"
-      warn "DEBUG:   Revision: #{revision}"
-      warn "DEBUG:   Short rev: #{short_rev}"
-      warn "DEBUG:   Working dir: #{Dir.pwd}"
-
       # Try with original gem name (e.g., opscare_reports)
       vendor_dir = File.join(Dir.pwd, 'vendor', 'cache', "#{spec.name}-#{short_rev}")
       # Try with hyphens instead of underscores (e.g., opscare-reports)
       vendor_dir_hyphen = File.join(Dir.pwd, 'vendor', 'cache', "#{spec.name.tr('_', '-')}-#{short_rev}")
-
-      warn "DEBUG:   Checking: #{vendor_dir}"
-      warn "DEBUG:   Exists? #{File.directory?(vendor_dir)}"
-      warn "DEBUG:   Checking: #{vendor_dir_hyphen}"
-      warn "DEBUG:   Exists? #{File.directory?(vendor_dir_hyphen)}"
 
       if File.directory?(vendor_dir)
         warn "Using local path for #{spec.name} from #{vendor_dir}"
@@ -287,7 +276,6 @@ class Bundix
         }
       end
 
-      warn "DEBUG: No vendor/cache directory found, falling back to git fetch"
       # Fall back to git fetching if not in vendor/cache
       output = fetcher.nix_prefetch_git(uri, revision, submodules: submodules)
       # FIXME: this is a hack, we should separate $stdout/$stderr in the sh call
