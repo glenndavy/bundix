@@ -262,17 +262,25 @@ class Bundix
       # Try with hyphens instead of underscores (e.g., opscare-reports)
       vendor_dir_hyphen = File.join(Dir.pwd, 'vendor', 'cache', "#{spec.name.tr('_', '-')}-#{short_rev}")
 
+      # If vendor/cache exists, compute hash but keep as git type for bundlerEnv
+      vendored_path = nil
       if File.directory?(vendor_dir)
-        warn "Using local path for #{spec.name} from #{vendor_dir}"
-        return {
-          type: "path",
-          path: "./vendor/cache/#{spec.name}-#{short_rev}"
-        }
+        vendored_path = vendor_dir
       elsif File.directory?(vendor_dir_hyphen)
-        warn "Using local path for #{spec.name} from #{vendor_dir_hyphen}"
+        vendored_path = vendor_dir_hyphen
+      end
+
+      if vendored_path
+        warn "Computing hash from cached git gem at #{vendored_path}"
+        # Compute hash using nix-hash on the directory
+        hash = Bundix.sh('nix-hash', '--type', 'sha256', '--base32', vendored_path).strip
+        warn "Using git type with cached hash for #{spec.name}"
         return {
-          type: "path",
-          path: "./vendor/cache/#{spec.name.tr('_', '-')}-#{short_rev}"
+          type: 'git',
+          url: "file://#{File.expand_path(vendored_path)}",
+          rev: revision,
+          sha256: hash,
+          fetchSubmodules: submodules
         }
       end
 
